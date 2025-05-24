@@ -1,0 +1,26 @@
+services:
+  test-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    volumes:
+      - ./logging.test.yml:/app/logging.test.yml
+      - ./logs:/app/logs
+    depends_on:
+      - test-db
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+      TEST_LOG_CONFIG: logging.test.yml
+      # LOGGING_ENABLED: true
+    command: ['pytest', '-vv', 'tests/']

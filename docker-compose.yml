@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: pg16_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - '${DB_PORT}:5432'
+    restart: unless-stopped
+
+  rest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: fastapi_pg_websocket
+    depends_on:
+      - db
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./src:/app
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+    restart: unless-stopped

@@ -1,0 +1,44 @@
+[project]
+name = "fastapi-pg-websocket"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Wilson Santos",email = "wilson.santos.dev87@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard] (>=0.115.12,<0.116.0)",
+    "sqlalchemy (>=2.0.41,<3.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "fastapi_pg_websocket", from = "src"}]
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+isort = "^6.0.1"
+pylint = "^3.3.7"
+pyright = "^1.1.400"
+pytest = "^8.3.5"
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = """
+    too-few-public-methods,
+    too-many-arguments,
+    missing-module-docstring,
+    missing-function-docstring,
+    missing-class-docstring,
+    bare-except
+"""
+
+[tool.pytest]
+log_cli = false
+
+[tool.black]
+line-length = 99
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
