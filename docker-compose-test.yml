@@ -21,6 +21,6 @@ services:
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
       DB_HOST: ${DB_HOST}
-      TEST_LOG_CONFIG: logging.test.yml
-      # LOGGING_ENABLED: true
+      LOGGING_CONFIG: logging.test.yml
+      LOGGING_ENABLED: true
     command: ['pytest', '-vv', 'tests/']

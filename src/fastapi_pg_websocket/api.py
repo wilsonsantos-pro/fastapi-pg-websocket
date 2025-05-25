@@ -26,36 +26,36 @@ class WebSocketClient:
 async def updates_all_user(websocket: WebSocket):
     await websocket.accept()
 
-    if not hasattr(app.state, "listener") or not app.state.listener.is_alive():
-        app.state.listener = PGListener(channel=LISTEN_CHANNEL_ORDER)
-        app.state.listener.start()
+    if not hasattr(websocket.app.state, "listener") or not websocket.app.state.listener.is_alive():
+        websocket.app.state.listener = PGListener(channel=LISTEN_CHANNEL_ORDER)
+        websocket.app.state.listener.start()
 
     client = WebSocketClient(websocket)
-    app.state.listener.add_client(client)
+    websocket.app.state.listener.add_client(client)
 
     try:
         while True:
             await websocket.receive_text()
     except:
-        app.state.listener.remove_client(client)
+        websocket.app.state.listener.remove_client(client)
 
 
 @app.websocket("/ws/users/{user_id}")
 async def updates_user(websocket: WebSocket, user_id: int):
     await websocket.accept()
 
-    if not hasattr(app.state, "listener") or not app.state.listener.is_alive():
-        app.state.listener = PGListener(LISTEN_CHANNEL_ORDER)
-        app.state.listener.start()
+    if not hasattr(websocket.app.state, "listener") or not websocket.app.state.listener.is_alive():
+        websocket.app.state.listener = PGListener(channel=LISTEN_CHANNEL_ORDER)
+        websocket.app.state.listener.start()
 
     client = WebSocketClient(websocket, user_id)
-    app.state.listener.add_client(client)
+    websocket.app.state.listener.add_client(client)
 
     try:
         while True:
             await websocket.receive_text()
     except:
-        app.state.listener.remove_client(client)
+        websocket.app.state.listener.remove_client(client)
 
 
 HTML = """

@@ -1,12 +1,16 @@
+# pylint: disable=redefined-outer-name
 import json
 import threading
+import time
 
+import pytest
 from sqlalchemy import text
 
 from fastapi_pg_websocket.database import LISTEN_CHANNEL_ORDER
 
 
-def test_users_notify(client, db_session):
+@pytest.fixture
+def notifier_thread_ready(db_session) -> threading.Event:
     ready = threading.Event()
 
     def trigger_change():
@@ -20,9 +24,26 @@ def test_users_notify(client, db_session):
         db_session.commit()
 
     threading.Thread(target=trigger_change).start()
+    return ready
+
+
+def test_users_notify(client, notifier_thread_ready: threading.Event):
 
     with client.websocket_connect("/ws/users") as ws:
         # Signal the background thread it's safe to send the notification now
-        ready.set()
+        notifier_thread_ready.set()
         data = ws.receive_text()
         assert "42" in data
+
+
+# def test_users_notify_refresh(app, client):
+#     # TODO test this logic without FastAPI
+
+#     with client.websocket_connect("/ws/users"):
+#         # open and close
+#         assert app.state.listener.should_run.wait(5)
+
+#     # should still be listening... until the "no client timeout"
+#     assert app.state.listener.should_run.is_set()
+#     time.sleep(1)
+#     assert not app.state.listener.should_run.is_set()

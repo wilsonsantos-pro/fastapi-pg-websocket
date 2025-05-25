@@ -1,16 +1,5 @@
-# FROM python:3.10-slim
-
-# WORKDIR /app
-
-# COPY . .
-
-# RUN pip install --no-cache-dir fastapi[standard] sqlalchemy psycopg2-binary
-
-# # CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
 # Base stage: installs deps
-FROM python:3.10-slim AS base
+FROM python:3.12-slim AS base
 
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1

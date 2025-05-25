@@ -1,29 +1,29 @@
 import asyncio
 import os
+from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
 
-from fastapi_pg_websocket.api import app
 from fastapi_pg_websocket.database import SessionLocal
+from fastapi_pg_websocket.logging import config_logging
+
+if TYPE_CHECKING:
+    from fastapi import FastAPI
+
+    from fastapi_pg_websocket.listener import PGListener
 
 
 def pytest_configure():
-    logging_enabled = os.getenv("LOGGING_ENABLED", False)
-    if logging_enabled:
-        _config_logging_test()
+    if os.getenv("LOGGING_ENABLED", False):
+        config_logging()
 
 
-def _config_logging_test():
-    import logging.config
+@pytest.fixture
+def app() -> "FastAPI":
+    from fastapi_pg_websocket.api import app as fastapi_app
 
-    import yaml
-
-    config_path = os.getenv("TEST_LOG_CONFIG", "logging.test.yml")
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-    logging.config.dictConfig(config)
-    logging.getLogger(__name__).info("Loaded test logging from %s", config_path)
+    return fastapi_app
 
 
 # from myapp.main import app  # , get_db
@@ -57,7 +57,10 @@ def db_session():
 
 @pytest.fixture()
 # def client(db_session):
-def client():
+def client(app: "FastAPI"):
     # app.dependency_overrides[get_db] = lambda: db_session
     with TestClient(app) as c:
         yield c
+        listener: "PGListener | None"
+        if listener := getattr(app.state, "listener", None):
+            listener.stop()

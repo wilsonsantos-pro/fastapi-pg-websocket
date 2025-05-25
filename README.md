@@ -3,6 +3,7 @@
 ### psql
 
 ```bash
+docker exec -it pg16_db bash
 PGPASSWORD=mypass psql -h localhost -U myuser -d mydb
 ```
 
@@ -10,4 +11,16 @@ PGPASSWORD=mypass psql -h localhost -U myuser -d mydb
 
 ```bash
 docker compose -p dev logs -f
+```
+
+### Running tests
+
+```bash
+make up-test
+```
+
+```bash
+pytest tests/test_listener.py
+# with logging enabled
+LOGGING_ENABLED=true LOGGING_CONFIG=logging.test.yml pytest tests/test_listener.py
 ```

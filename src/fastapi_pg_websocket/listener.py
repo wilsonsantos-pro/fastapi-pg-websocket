@@ -15,6 +15,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+NO_CLIENT_TIMEOUT_SEC = 30
+
+
 class PGListener:
     def __init__(self, channel: str):
         self.channel = channel
@@ -36,11 +39,15 @@ class PGListener:
 
     def add_client(self, client: Observer) -> None:
         self.clients.add(client)
+        logger.debug("Client added [client=%s, count=%d]", client, len(self.clients))
 
     def remove_client(self, client: Observer) -> None:
         self.clients.discard(client)
-        if not self.clients:
-            self.should_run.clear()
+        logger.debug("Client removed [client=%s]", client)
+
+    def stop(self) -> None:
+        self.should_run.clear()
+        logger.debug("Stopping listener [channel=%s]", self.channel)
 
     def _listen(self):
         conn = get_raw_db_connection()
@@ -53,29 +60,34 @@ class PGListener:
     def _listen_to_channel(self, conn: "connection") -> None:
         cur = conn.cursor()
         cur.execute(f"LISTEN {self.channel};")
-        logger.info("Started listening [channel=%s]", self.channel)
+        logger.info("Listener started [channel=%s]", self.channel)
 
         idle_seconds = 0
         while self.should_run.is_set():
             if not self.clients:
                 idle_seconds += 1
-                if idle_seconds > 30:
-                    logger.warning("No clients connected. Stopping listener.")
-                    break
+                if idle_seconds > NO_CLIENT_TIMEOUT_SEC:
+                    logger.warning(
+                        "No clients connected [channel=%s, timeout=%d]",
+                        self.channel,
+                        NO_CLIENT_TIMEOUT_SEC,
+                    )
+                    self.stop()
             else:
                 idle_seconds = 0
 
-            if select.select([conn], [], [], 1) == ([], [], []):
+            if not self._channel_has_new_data(conn):
                 continue
             conn.poll()
             while conn.notifies:
                 notify = conn.notifies.pop(0)
-                data = json.loads(notify.payload)
-                logger.info("Row updated: [id=%d]", data["id"])
-                # asyncio.run(notify_clients(self.clients, notify.payload))
+                logger.info("Row updated [%s]", notify.payload)
                 self.loop.call_soon_threadsafe(
-                    asyncio.create_task, notify_clients(self.clients.copy(), notify.payload)
+                    asyncio.create_task, notify_clients(self.clients, notify.payload)
                 )
+
+    def _channel_has_new_data(self, conn: "connection") -> bool:
+        return select.select([conn], [], [], 1) != ([], [], [])
 
 
 async def notify_clients(clients: set[Observer], message: str):
