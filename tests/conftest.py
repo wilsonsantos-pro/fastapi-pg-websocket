@@ -1,11 +1,10 @@
-import asyncio
 import os
 from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
 
-from fastapi_pg_websocket.database import SessionLocal
+from fastapi_pg_websocket.database import SessionLocal, db_session_ctx
 from fastapi_pg_websocket.logging import config_logging
 
 if TYPE_CHECKING:
@@ -21,7 +20,7 @@ def pytest_configure():
 
 @pytest.fixture
 def app() -> "FastAPI":
-    from fastapi_pg_websocket.api import app as fastapi_app
+    from fastapi_pg_websocket.app.api import app as fastapi_app
 
     return fastapi_app
 
@@ -48,11 +47,11 @@ def app() -> "FastAPI":
 # Dependency override
 @pytest.fixture()
 def db_session():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    with db_session_ctx() as db:
+        try:
+            yield db
+        finally:
+            db.rollback()
 
 
 @pytest.fixture()

@@ -1,9 +1,10 @@
 import os
-from typing import TYPE_CHECKING
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Generator
 
 import psycopg2
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 if TYPE_CHECKING:
     from psycopg2.extensions import connection
@@ -31,3 +32,12 @@ def get_raw_db_connection() -> "connection":
 
 engine = create_engine(get_connection_url())
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
+
+
+@contextmanager
+def db_session_ctx() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
