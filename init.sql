@@ -26,7 +26,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 2. Create the trigger
-DROP TRIGGER IF EXISTS status_change_trigger ON my_table;
+DROP TRIGGER IF EXISTS status_change_trigger ON users;
 
 CREATE TRIGGER status_change_trigger
 AFTER UPDATE ON users

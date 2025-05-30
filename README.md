@@ -3,8 +3,10 @@
 ### psql
 
 ```bash
-docker exec -it pg16_db bash
+docker exec -it fastapi_pg_websocket_db bash
 PGPASSWORD=mypass psql -h localhost -U myuser -d mydb
+
+docker exec -it fastapi_pg_websocket_db bash -c 'PGPASSWORD=mypass psql -h localhost -U myuser -d mydb'
 ```
 
 ### Follow logs

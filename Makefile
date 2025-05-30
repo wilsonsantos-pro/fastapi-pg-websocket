@@ -8,8 +8,14 @@ up-pdb:
 up-dev:
 	docker compose --env-file .env.dev -p dev -f docker-compose.yml up --build -d
 
+up-dev-all:
+	docker compose --env-file .env.dev -p dev -f docker-compose-all.yml up --build -d
+
 down-dev:
 	docker compose -p dev down
 
 logs-dev:
 	docker compose -p dev logs -f
+
+db-shell:
+	@docker exec -it fastapi_pg_websocket_db bash -c 'PGPASSWORD=mypass psql -h localhost -U myuser -d mydb'
