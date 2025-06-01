@@ -67,6 +67,21 @@ services:
       timeout: 3s
       retries: 5
 
+  random_change:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    command: poetry run python /app/scripts/random_change.py
+    depends_on:
+      rest:
+        condition: service_healthy
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+
   graphql-server:
     build:
       context: frontend
