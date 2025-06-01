@@ -14,7 +14,7 @@ handlers:
     class: logging.FileHandler
     level: DEBUG
     formatter: detailed
-    filename: logs/test.log
+    filename: /logs/test.log
     encoding: utf8
 
 root:

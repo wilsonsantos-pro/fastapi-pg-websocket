@@ -12,8 +12,8 @@ services:
       dockerfile: Dockerfile
       target: test
     volumes:
-      - ./logging.test.yml:/app/logging.test.yml
-      - ./logs:/app/logs
+      - ./logging.test.yml:/config/logging.test.yml
+      - ./logs:/logs
     depends_on:
       - test-db
     environment:
@@ -21,6 +21,7 @@ services:
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
       DB_HOST: ${DB_HOST}
-      LOGGING_CONFIG: logging.test.yml
+      LOGGING_CONFIG: /config/logging.test.yml
       LOGGING_ENABLED: true
+      ALEMBIC_CONFIG: /app/alembic.ini
     command: ['pytest', '-vv', 'tests/']

@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING
 import pytest
 from fastapi.testclient import TestClient
 
-from fastapi_pg_websocket.database import SessionLocal, db_session_ctx
+from alembic import command
+from alembic.config import Config
+from fastapi_pg_websocket.app.dependencies import get_db
+from fastapi_pg_websocket.database import db_session_ctx
 from fastapi_pg_websocket.logging import config_logging
 
 if TYPE_CHECKING:
@@ -25,26 +28,12 @@ def app() -> "FastAPI":
     return fastapi_app
 
 
-# from myapp.main import app  # , get_db
+@pytest.fixture(scope="session", autouse=True)
+def run_migrations():
+    alembic_cfg = Config(os.environ.get("ALEMBIC_CONFIG"))
+    command.upgrade(alembic_cfg, "head")
 
 
-# from myapp.db import Base  # Your SQLAlchemy base
-
-# Use a real PostgreSQL test database
-# TEST_DATABASE_URL = "postgresql+psycopg2://test_user:test_pass@localhost:5433/test_db"
-
-# Engine and session for tests
-# engine = create_engine(TEST_DATABASE_URL)
-# TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# @pytest.fixture(scope="session", autouse=True)
-# def setup_test_db():
-#     Base.metadata.create_all(bind=engine)
-#     yield
-#     Base.metadata.drop_all(bind=engine)
-
-
-# Dependency override
 @pytest.fixture()
 def db_session():
     with db_session_ctx() as db:
@@ -55,9 +44,8 @@ def db_session():
 
 
 @pytest.fixture()
-# def client(db_session):
-def client(app: "FastAPI"):
-    # app.dependency_overrides[get_db] = lambda: db_session
+def client(app: "FastAPI", db_session):
+    app.dependency_overrides[get_db] = lambda: db_session
     with TestClient(app) as c:
         yield c
         listener: "PGListener | None"

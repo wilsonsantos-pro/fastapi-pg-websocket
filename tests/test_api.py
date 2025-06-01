@@ -3,9 +3,12 @@ import json
 import threading
 
 import pytest
-from sqlalchemy import text
+from fastapi.testclient import TestClient
+from sqlalchemy import insert, text
+from sqlalchemy.orm import Session
 
 from fastapi_pg_websocket.database import LISTEN_CHANNEL_ORDER
+from fastapi_pg_websocket.orm import User
 
 
 @pytest.fixture
@@ -33,3 +36,18 @@ def test_users_notify(client, notifier_thread_ready: threading.Event):
         notifier_thread_ready.set()
         data = ws.receive_text()
         assert "42" in data
+
+
+def test_change_status(client: TestClient, db_session: Session):
+    db_session.execute(
+        insert(User).values(
+            id=1,
+            username="johnsnow",
+            email="johnsnow@westeros.com",
+            status=1,
+        )
+    )
+
+    res = client.post("users/1", content="666")
+    assert res.status_code == 200
+    assert res.json()["status"] == 666

@@ -1,8 +1,8 @@
 import logging
 
-from fastapi import Depends, FastAPI, Request, WebSocket
+from fastapi import Body, Depends, FastAPI, Request, WebSocket
 from fastapi.responses import HTMLResponse
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from fastapi_pg_websocket.app.dependencies import get_db
@@ -96,3 +96,9 @@ async def user_id_tracking(user_id: int):
 @app.get("/users")
 async def get_users(db: Session = Depends(get_db)):
     return db.scalars(select(User)).all()
+
+
+@app.post("/users/{user_id}")
+async def change_status(user_id: int, status: int = Body(...), db: Session = Depends(get_db)):
+    db.execute(update(User).where(User.id == user_id).values(status=status))
+    return db.scalar(select(User).where(User.id == user_id))

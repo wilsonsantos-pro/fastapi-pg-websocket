@@ -12,6 +12,7 @@ RUN pip install poetry && poetry config virtualenvs.create false \
 
 # App source
 COPY . .
+RUN mv ./src/alembic ./
 
 # ------------------------------------------------
 # Dev stage: uses base, adds dev dependencies

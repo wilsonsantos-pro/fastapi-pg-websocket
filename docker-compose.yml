@@ -1,34 +1,84 @@
 services:
   db:
     image: postgres:16
-    container_name: pg16_db
+    container_name: fastapi_pg_websocket_db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pgdata:/var/lib/postgresql/data
     ports:
       - '${DB_PORT}:5432'
     restart: unless-stopped
+
+  alembic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    command: alembic upgrade head
+    volumes:
+      - ./src:/app
+      - ./logging.dev.yml:/config/logging.dev.yml
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      - db
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+    # Remove after the job finishes
+    restart: 'no'
 
   rest:
     build:
       context: .
       dockerfile: Dockerfile
       target: dev
-    container_name: fastapi_pg_websocket
+    container_name: fastapi_pg_websocket_rest
     depends_on:
-      - db
+      alembic:
+        condition: service_completed_successfully
     ports:
       - '8000:8000'
     volumes:
       - ./src:/app
       - ./logging.dev.yml:/config/logging.dev.yml
+      - ./alembic.ini:/app/alembic.ini
     environment:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_NAME: ${DB_NAME}
       DB_HOST: ${DB_HOST}
       LOGGING_CONFIG: /config/logging.dev.yml
+      ALEMBIC_CONFIG: /app/alembic.ini
     restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'python',
+          '-c',
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  graphql-server:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: fastapi_pg_websocket_graphql
+    ports:
+      - '4000:4000'
+    depends_on:
+      rest:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local
